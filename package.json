@@ -1,0 +1,38 @@
+{
+  "name": "metrex",
+  "version": "0.2.0",
+  "description": "Middleware para Express que instrumenta tu API y provee una vista de métricas configurable.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "example": "npm run build && node example/server.js",
+    "test": "echo \"No hay tests definidos aún\"",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "express",
+    "metrics",
+    "monitoring",
+    "dashboard",
+    "middleware"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=16"
+  },
+  "peerDependencies": {
+    "express": ">=4"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "express": "^5.1.0",
+    "typescript": "^5.6.3"
+  }
+}
