@@ -23,6 +23,6 @@ export function metrexRouter(options: MetrexOptions = {}) {
 export * from './types';
 
 export default {
-  useMetrex,
+  metrex: useMetrex,
   metrexRouter,
 };

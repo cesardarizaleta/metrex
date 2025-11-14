@@ -16,7 +16,7 @@ export function makeInstrumentation(store: Store, options: MetrexOptions) {
   return function instrumentation(req: Request, res: Response, next: NextFunction) {
     const path = (req.originalUrl || (req as any).path || '') as string;
     const isExcluded = [...exclude, ...alwaysExclude].some((p) =>
-      typeof p === 'string' ? path.startsWith(p) : p.test(path)
+      typeof p === 'string' ? path.startsWith(p) : p.test(path),
     );
     if (!shouldTrack(req) || isExcluded) return next();
 
@@ -30,7 +30,8 @@ export function makeInstrumentation(store: Store, options: MetrexOptions) {
       const status = res.statusCode || 0;
       store.inFlight = Math.max(0, store.inFlight - 1);
 
-      const routeTemplate = (req.baseUrl || '') + ((req as any).route?.path || ((req as any).path || ''));
+      const routeTemplate =
+        (req.baseUrl || '') + ((req as any).route?.path || (req as any).path || '');
       const route = `${method} ${routeTemplate}`;
 
       recordEvent(store, {

@@ -1,0 +1,24 @@
+name: Feature request
+description: Propón una mejora o nueva funcionalidad
+labels: [enhancement]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivación
+      description: ¿Qué problema resuelve y para quién?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+      description: Explica el cambio deseado y su API.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+  - type: input
+    id: context
+    attributes:
+      label: Contexto adicional

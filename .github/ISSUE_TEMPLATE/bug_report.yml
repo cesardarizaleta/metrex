@@ -1,0 +1,30 @@
+name: Bug report
+description: Reporta un bug en Metrex
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción
+      description: ¿Qué sucede y qué esperabas que suceda?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Pasos para reproducir
+      description: Incluye rutas, payloads y resultados.
+      render: bash
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Metrex
+  - type: input
+    id: node
+    attributes:
+      label: Versión de Node
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs/stacktrace
+      render: text
