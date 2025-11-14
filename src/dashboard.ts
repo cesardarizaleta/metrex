@@ -10,7 +10,7 @@ export function renderHtml() {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Metrex - Métricas</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Charts optional; disabled to maximize compatibility -->
   <style>
     :root { color-scheme: light dark; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; margin: 0; padding: 1rem; }
@@ -41,8 +41,8 @@ export function renderHtml() {
   </section>
 
   <section class="grid">
-    <div class="card"><canvas id="rpsChart" height="130"></canvas></div>
-    <div class="card"><canvas id="statusChart" height="130"></canvas></div>
+    <div class="card" id="rpsChartBox" style="min-height:130px"></div>
+    <div class="card" id="statusChartBox" style="min-height:130px"></div>
   </section>
 
   <section class="card" style="margin-top:12px; overflow:auto; max-height: 55vh">
@@ -66,7 +66,10 @@ export function renderHtml() {
 
   <script>
     // Use ES5-compatible syntax to maximize browser compatibility
-    var base = window.location.pathname.replace(/\/$/, '');
+    var base = window.location.pathname;
+    if (base.length > 1 && base.charAt(base.length - 1) === '/') {
+      base = base.slice(0, -1);
+    }
     function fmtMs(n) { return (n || 0).toFixed(1); }
     function fmtCount(n) { return new Intl.NumberFormat().format(n || 0); }
     function fmtTimeAgo(ts) {
@@ -77,23 +80,11 @@ export function renderHtml() {
       var h = Math.floor(m/60); return h + 'h';
     }
 
-    var rpsCtx = document.getElementById('rpsChart');
-    var statusCtx = document.getElementById('statusChart');
-
-    var rpsChart = new Chart(rpsCtx, {
-      type: 'line',
-      data: { labels: [], datasets: [{ label: 'RPS', data: [], tension: 0.25, borderColor: '#3b82f6', backgroundColor: 'transparent', pointRadius: 0 }] },
-      options: { plugins: { legend: { display: false }}, scales: { x: { display: false }, y: { beginAtZero: true } } }
-    });
-
-    var statusChart = new Chart(statusCtx, {
-      type: 'bar',
-      data: { labels: [], datasets: [{ label: 'Status', data: [], backgroundColor: '#10b981' }] },
-      options: { plugins: { legend: { display: false }}, scales: { y: { beginAtZero: true } } }
-    });
+    var rpsBox = document.getElementById('rpsChartBox');
+    var statusBox = document.getElementById('statusChartBox');
 
     function refresh() {
-      fetch(base + '/data').then(function(res) {
+      fetch(base + '/data?ts=' + Date.now()).then(function(res) {
         if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
         return res.json();
       }).then(function(d) {
@@ -103,16 +94,21 @@ export function renderHtml() {
         document.getElementById('p95').textContent = fmtMs(d.overall.p95);
         document.getElementById('uptime').textContent = 'Uptime ' + fmtTimeAgo(d.startedAt);
 
-        rpsChart.data.labels = d.timeline.map(function() { return ''; });
-        rpsChart.data.datasets[0].data = d.timeline.map(function(b) { return b.count; });
-        rpsChart.update('none');
+        // Simple textual sparkline substitute for compatibility
+        var last60 = d.timeline.map(function(b) { return b.count; });
+        var max = Math.max.apply(null, last60.concat([1]));
+        var bars = last60.map(function(v){
+          var h = Math.round((v/max)*8);
+          var blocks = ['_', '.', ':', '-', '=', '+', '*', '#'];
+          return blocks[Math.max(0, Math.min(7, h))];
+        }).join('');
+        rpsBox.textContent = 'RPS(60s) ' + bars;
 
         var stsEntries = [];
         for (var k in d.statusCounts) { if (Object.prototype.hasOwnProperty.call(d.statusCounts, k)) stsEntries.push([k, d.statusCounts[k]]); }
         stsEntries.sort(function(a,b) { return String(a[0]).localeCompare(String(b[0])); });
-        statusChart.data.labels = stsEntries.map(function(x){ return x[0]; });
-        statusChart.data.datasets[0].data = stsEntries.map(function(x){ return x[1]; });
-        statusChart.update('none');
+        var statusText = stsEntries.map(function(x){ return x[0] + ':' + x[1]; }).join('  ');
+        statusBox.textContent = statusText || 'sin datos';
 
         var tb = document.getElementById('routes');
         tb.innerHTML = '';
@@ -144,9 +140,11 @@ export function makeDashboardRouter(store: Store): Router {
   const router = express.Router();
   router.get('/', (_req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
     res.send(renderHtml());
   });
   router.get('/data', (_req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
     res.json(summarize(store));
   });
   return router;
