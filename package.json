@@ -1,6 +1,6 @@
 {
   "name": "metrex",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Express middleware that instruments your API and provides a configurable metrics dashboard.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cesardarizaleta/metrex.git"
+    "url": "git+https://github.com/cesardarizaleta/metrex.git"
   },
   "bugs": {
     "url": "https://github.com/cesardarizaleta/metrex/issues"
