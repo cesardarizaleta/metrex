@@ -41,7 +41,7 @@ export function renderHtml() {
     .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0; padding: 16px; box-shadow: 0 1px 0 #0001; }
     .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
     .value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 19px; }
-    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 16px; align-items: stretch; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 16px; align-items: stretch; }
     .chart { height: 38vh; min-height: 300px; max-height: 520px; position: relative; }
     .chart canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
     table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
@@ -55,7 +55,6 @@ export function renderHtml() {
 </head>
 <body>
   <header>
-    <h1>Metrex</h1>
     <div class="muted" id="uptime">Cargando…</div>
   </header>
 
@@ -64,11 +63,15 @@ export function renderHtml() {
     <div class="card"><div class="muted">En curso</div><div class="mono" id="inflight">–</div></div>
     <div class="card"><div class="muted">RPS (1m)</div><div class="mono" id="rps1m">–</div></div>
     <div class="card"><div class="muted">P95 (ms)</div><div class="mono" id="p95">–</div></div>
+    <div class="card"><div class="muted">CPU (%)</div><div class="mono" id="cpu">–</div></div>
+    <div class="card"><div class="muted">Memoria (MB)</div><div class="mono" id="memory">–</div></div>
   </section>
 
   <section class="grid">
     <div class="card chart"><canvas id="rpsChart"></canvas></div>
     <div class="card chart"><canvas id="statusChart"></canvas></div>
+    <div class="card chart"><canvas id="cpuChart"></canvas></div>
+    <div class="card chart"><canvas id="memoryChart"></canvas></div>
   </section>
 
   <section class="card" style="margin-top:12px; overflow:auto; max-height: 55vh">
@@ -106,9 +109,13 @@ export function renderHtml() {
 
     var rpsCtx = document.getElementById('rpsChart');
     var statusCtx = document.getElementById('statusChart');
+    var cpuCtx = document.getElementById('cpuChart');
+    var memoryCtx = document.getElementById('memoryChart');
     var hasChart = typeof window.Chart !== 'undefined';
     var rpsChart = null;
     var statusChart = null;
+    var cpuChart = null;
+    var memoryChart = null;
     if (hasChart) {
       try {
         rpsChart = new Chart(rpsCtx, {
@@ -126,6 +133,16 @@ export function renderHtml() {
             layout: { padding: { left: 8, right: 8, top: 8, bottom: 8 } },
             barPercentage: 0.8, categoryPercentage: 0.7 }
         });
+        cpuChart = new Chart(cpuCtx, {
+          type: 'line',
+          data: { labels: [], datasets: [{ label: 'CPU %', data: [], backgroundColor: 'rgba(239,68,68,0.10)', borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, lineTension: 0.2 }] },
+          options: { responsive: true, maintainAspectRatio: false, legend: { display: false }, scales: { xAxes: [{ display: false }], yAxes: [{ ticks: { beginAtZero: true } }] } }
+        });
+        memoryChart = new Chart(memoryCtx, {
+          type: 'line',
+          data: { labels: [], datasets: [{ label: 'Memory MB', data: [], backgroundColor: 'rgba(245,158,11,0.10)', borderColor: '#f59e0b', borderWidth: 2, pointRadius: 0, lineTension: 0.2 }] },
+          options: { responsive: true, maintainAspectRatio: false, legend: { display: false }, scales: { xAxes: [{ display: false }], yAxes: [{ ticks: { beginAtZero: true } }] } }
+        });
       } catch (e) { console.warn('Chart init failed', e); hasChart = false; }
     }
 
@@ -139,6 +156,11 @@ export function renderHtml() {
         document.getElementById('rps1m').textContent = ((d.rps1m || 0)).toFixed(2);
         document.getElementById('p95').textContent = fmtMs(d.overall.p95);
         document.getElementById('uptime').textContent = 'Uptime ' + fmtTimeAgo(d.startedAt);
+        
+        if (d.systemMetrics) {
+          document.getElementById('cpu').textContent = (d.systemMetrics.cpuUsage * 100).toFixed(1);
+          document.getElementById('memory').textContent = (d.systemMetrics.memoryUsage / 1024 / 1024).toFixed(1);
+        }
 
         if (hasChart && rpsChart) {
           rpsChart.data.labels = d.timeline.map(function(){ return ''; });
@@ -164,6 +186,18 @@ export function renderHtml() {
           statusChart.data.datasets[0].data = values;
           statusChart.data.datasets[0].backgroundColor = colors;
           statusChart.update();
+        }
+
+        if (hasChart && cpuChart && d.systemTimeline) {
+          cpuChart.data.labels = d.systemTimeline.map(function(){ return ''; });
+          cpuChart.data.datasets[0].data = d.systemTimeline.map(function(m){ return m.cpuUsage * 100; });
+          cpuChart.update();
+        }
+
+        if (hasChart && memoryChart && d.systemTimeline) {
+          memoryChart.data.labels = d.systemTimeline.map(function(){ return ''; });
+          memoryChart.data.datasets[0].data = d.systemTimeline.map(function(m){ return m.memoryUsage / 1024 / 1024; });
+          memoryChart.update();
         }
 
         var tb = document.getElementById('routes');

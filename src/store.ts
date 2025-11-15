@@ -1,5 +1,5 @@
 import { average, nowMs, percentile } from './util';
-import type { Event, MetrexOptions, Store } from './types';
+import type { Event, MetrexOptions, Store, SystemMetrics } from './types';
 
 export function createStore(options: MetrexOptions): Store {
   const maxEvents = options.historySize ?? 2000;
@@ -11,6 +11,7 @@ export function createStore(options: MetrexOptions): Store {
     routeStats: {},
     events: [],
     maxEvents,
+    systemMetrics: [],
   };
 }
 
@@ -82,5 +83,26 @@ export function summarize(store: Store) {
     rps5m: last5m.length / 300,
     routes: routes.sort((a, b) => b.count - a.count).slice(0, 200),
     timeline: buckets,
+    systemMetrics:
+      store.systemMetrics.length > 0 ? store.systemMetrics[store.systemMetrics.length - 1] : null,
+    systemTimeline: store.systemMetrics.slice(-60), // Last minute
   };
+}
+
+export function collectSystemMetrics(store: Store) {
+  const memUsage = process.memoryUsage();
+  const cpuUsage = process.cpuUsage();
+
+  const metrics: SystemMetrics = {
+    cpuUsage: (cpuUsage.user + cpuUsage.system) / 1000000, // Convert to seconds
+    memoryUsage: memUsage.heapUsed,
+    memoryTotal: memUsage.heapTotal,
+    timestamp: nowMs(),
+  };
+
+  store.systemMetrics.push(metrics);
+  if (store.systemMetrics.length > 60) {
+    // Keep last minute of data
+    store.systemMetrics = store.systemMetrics.slice(-60);
+  }
 }

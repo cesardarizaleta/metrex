@@ -1,10 +1,10 @@
 const express = require('express');
-const { metrex } = require('..');
+const { useMetrex } = require('..');
 
 const app = express();
 
 // Attach Metrex globally and mount dashboard at /metrex
-metrex(app, { routePath: '/metrex' });
+useMetrex(app, { routePath: '/metrex' });
 
 // Demo routes
 app.get('/hello', (req, res) => {
