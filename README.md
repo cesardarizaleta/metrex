@@ -1,16 +1,14 @@
 # Metrex
 
-Middleware para Express que instrumenta tu API y expone una ruta con un dashboard de métricas ligero (RPS, latencias, status codes y top rutas). Sin dependencias de runtime, sólo `express` como peer.
+Express middleware that instruments your API and exposes a route with a lightweight metrics dashboard (RPS, latencies, status codes, and top routes). No runtime dependencies, only `express` as a peer dependency.
 
-## Instalación
+## Installation
 
 ```bash
 npm install metrex
 ```
 
-> Nota: si vas a publicar con otro nombre, reemplaza `metrex` por el definitivo.
-
-## Uso rápido
+## Quick Start
 
 ```js
 const express = require('express');
@@ -18,44 +16,52 @@ const { useMetrex } = require('metrex');
 
 const app = express();
 
-// Instrumenta globalmente y monta el dashboard en /metrex
+// Globally instrument and mount the dashboard at /metrex
 useMetrex(app, { routePath: '/metrex' });
 
 app.get('/hello', (req, res) => res.json({ ok: true }));
 
 app.listen(3000, () => {
-  console.log('Metrex en http://localhost:3000/metrex');
+  console.log('Metrex at http://localhost:3000/metrex');
 });
 ```
 
-Abre `http://localhost:3000/metrex` para ver el dashboard. El endpoint `GET /metrex/data` expone un JSON con el snapshot actual de métricas.
+Open `http://localhost:3000/metrex` to view the dashboard. The `GET /metrex/data` endpoint exposes a JSON snapshot of current metrics.
 
-## Opciones
+## Options
 
-- `routePath` (string): ruta base del dashboard. Por defecto `/metrex`.
-- `historySize` (number): cantidad de eventos a retener en memoria (por defecto 2000).
-- `shouldTrack(req)` (function): función filtro; devuelve `false` para no contar un request.
-- `excludePaths` (string[] | RegExp[]): paths a excluir de la instrumentación.
-- `slowThreshold` (number): umbral en ms para marcar requests lentos (reservado para futuras mejoras).
+- `routePath` (string): base path for the dashboard. Default `/metrex`.
+- `historySize` (number): number of events to retain in memory (default 2000).
+- `shouldTrack(req)` (function): filter function; return `false` to not count a request.
+- `excludePaths` (string[] | RegExp[]): paths to exclude from instrumentation.
+- `slowThreshold` (number): threshold in ms to mark slow requests (reserved for future enhancements).
 
-## Recomendaciones
+## Recommendations
 
-- Móntalo antes de tus rutas de negocio: `app.use(metrex())` al inicio para capturar todas.
-- Si usas paths sensibles, exclúyelos con `excludePaths`.
-- Para entornos multiinstancia, considera agregar un endpoint `/health` excluido para no sesgar las métricas.
+- Mount it before your business routes: `app.use(metrex())` at the beginning to capture all requests.
+- If you have sensitive paths, exclude them with `excludePaths`.
+- For multi-instance environments, consider adding an excluded `/health` endpoint to avoid skewing metrics.
 
 ## Endpoints
 
-- `GET {routePath}`: HTML del dashboard.
-- `GET {routePath}/data`: JSON con métricas agregadas.
+- `GET {routePath}`: HTML dashboard.
+- `GET {routePath}/data`: JSON with aggregated metrics.
 
-## Ejemplo local
+## Local Example
 
 ```bash
 npm run example
-# abre http://localhost:3000/metrex
+# open http://localhost:3000/metrex
 ```
 
-## Licencia
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for security policy.
+
+## License
 
 ISC

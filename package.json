@@ -1,7 +1,7 @@
 {
   "name": "metrex",
   "version": "0.2.0",
-  "description": "Middleware para Express que instrumenta tu API y provee una vista de métricas configurable.",
+  "description": "Express middleware that instruments your API and provides a configurable metrics dashboard.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -25,8 +25,16 @@
     "dashboard",
     "middleware"
   ],
-  "author": "",
+  "author": "Cesar Dominguez",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cesardarizaleta/metrex.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cesardarizaleta/metrex/issues"
+  },
+  "homepage": "https://github.com/cesardarizaleta/metrex#readme",
   "type": "commonjs",
   "engines": {
     "node": ">=16"
