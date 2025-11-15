@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/vscode/launch.json",
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run example server",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/example/server.js",
+      "preLaunchTask": "build",
+      "runtimeArgs": ["--env-file", ".env"]
+    }
+  ]
+}
