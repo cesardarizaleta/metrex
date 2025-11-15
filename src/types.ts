@@ -17,6 +17,13 @@ export type RouteStats = {
   lastSeenAt: number;
 };
 
+export type SystemMetrics = {
+  cpuUsage: number;
+  memoryUsage: number;
+  memoryTotal: number;
+  timestamp: number;
+};
+
 export type Store = {
   startedAt: number;
   total: number;
@@ -25,6 +32,7 @@ export type Store = {
   routeStats: Record<string, RouteStats>;
   events: Event[];
   maxEvents: number;
+  systemMetrics: SystemMetrics[];
 };
 
 export type { Express };
