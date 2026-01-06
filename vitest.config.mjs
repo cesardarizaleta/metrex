@@ -1,6 +1,4 @@
-import { defineConfig } from 'vitest/config';
-
-export default defineConfig({
+export default {
   test: {
     environment: 'node',
     reporters: 'default',
@@ -8,4 +6,4 @@ export default defineConfig({
       enabled: false,
     },
   },
-});
+};
