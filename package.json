@@ -1,6 +1,6 @@
 {
   "name": "metrex",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Express middleware that instruments your API and provides a configurable metrics dashboard.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

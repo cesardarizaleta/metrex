@@ -1,3 +1,17 @@
+# [0.5.0](https://github.com/cesardarizaleta/metrex/compare/v0.4.0...v0.5.0) (2026-01-07)
+
+
+### Bug Fixes
+
+* correct formatting in Metrex configuration and remove obsolete package ([f7a6c41](https://github.com/cesardarizaleta/metrex/commit/f7a6c415242e7df489654cbbe1129f7981f31a96))
+
+
+### Features
+
+* add basic authentication for Metrex dashboard and update documentation ([acc0e79](https://github.com/cesardarizaleta/metrex/commit/acc0e79d6dbf608f8f93f59ea9b30e27d97b1a45))
+* enhance alerting system with CPU and latency thresholds, and add notifications in documentation ([3274ed9](https://github.com/cesardarizaleta/metrex/commit/3274ed9f5977370440ee6780e9abd394d8e23667))
+* implement custom metrics tracking and Prometheus integration ([38bf960](https://github.com/cesardarizaleta/metrex/commit/38bf9607a94a99c2ba3ab894a55922492f044963))
+
 # [0.4.0](https://github.com/cesardarizaleta/metrex/compare/v0.3.0...v0.4.0) (2026-01-07)
 
 
