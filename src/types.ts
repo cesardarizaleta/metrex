@@ -12,9 +12,21 @@ export type Event = { ts: number; route: string; method: string; status: number;
 
 export type RouteStats = {
   count: number;
+  totalDuration: number;
   statuses: Record<number, number>;
   durations: number[];
   lastSeenAt: number;
+};
+
+export type MetricType = 'counter' | 'gauge';
+
+export type CustomMetric = {
+  name: string;
+  type: MetricType;
+  value: number;
+  help?: string;
+  updatedAt: number;
+  history: { t: number; v: number }[];
 };
 
 export type SystemMetrics = {
@@ -30,6 +42,7 @@ export type Store = {
   inFlight: number;
   statusCounts: Record<number, number>;
   routeStats: Record<string, RouteStats>;
+  customMetrics: Record<string, CustomMetric>;
   events: Event[];
   maxEvents: number;
   systemMetrics: SystemMetrics[];

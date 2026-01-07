@@ -1,5 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { summarize } from './store';
+import { getPrometheusMetrics } from './prometheus';
 import type { Store } from './types';
 
 export function renderHtml() {
@@ -226,6 +227,12 @@ export function renderHtml() {
       </div>
     </section>
 
+    <!-- CUSTOM METRICS SECTION -->
+    <h2 style="margin-top: 40px">Custom Metrics</h2>
+    <div class="cards" id="custom-metrics">
+      <div class="sub">Loading custom metrics...</div>
+    </div>
+
     <div class="foot">
       <span>Metrex Telemetry v1.0</span>
       <span>Powered by Node.js</span>
@@ -386,6 +393,71 @@ export function renderHtml() {
           tb.appendChild(tr);
         });
 
+        // Update Custom Metrics
+        var cmContainer = document.getElementById('custom-metrics');
+        if (cmContainer && d.customMetrics) {
+          var keys = Object.keys(d.customMetrics);
+          if (keys.length === 0) {
+            if (cmContainer.innerHTML.indexOf('No custom metrics') === -1) {
+                cmContainer.innerHTML = '<div class="sub">No custom metrics recorded yet.</div>';
+            }
+          } else {
+             // Clear clean slate ONLY if it has the placeholder text (not strict check but good enough for this demo)
+             if (cmContainer.innerHTML.indexOf('No custom metrics') !== -1) cmContainer.innerHTML = '';
+             
+             keys.forEach(function(k) {
+                var m = d.customMetrics[k];
+                var safeId = 'cm-' + k.replace(/[^a-zA-Z0-9-_]/g, ''); 
+                var card = document.getElementById(safeId);
+                
+                if (!card) {
+                    card = document.createElement('div');
+                    card.className = 'card';
+                    card.id = safeId;
+                    // Minimal structure: Title, Value, Chart Container, Help
+                    card.innerHTML = 
+                        '<div class="card-title">' + m.name + ' <span class="pill" style="font-size: 10px; padding: 2px 8px">' + m.type.toUpperCase() + '</span></div>' +
+                        '<div class="card-value" id="val-' + safeId + '">' + m.value + '</div>' +
+                        '<div style="height: 50px; margin-top: 8px; width: 100%;" id="chart-' + safeId + '"></div>' +
+                        (m.help ? '<div class="sub" style="margin-top:8px">' + m.help + '</div>' : '');
+                    cmContainer.appendChild(card);
+                    
+                    if (typeof echarts !== 'undefined') {
+                        var chartDom = document.getElementById('chart-' + safeId);
+                        chartDom.echartsInstance = echarts.init(chartDom);
+                    }
+                } else {
+                    document.getElementById('val-' + safeId).textContent = m.value;
+                }
+
+                // Render Chart if history exists
+                var chartDom = document.getElementById('chart-' + safeId);
+                if (chartDom && chartDom.echartsInstance && m.history && m.history.length) {
+                    var dataVals = m.history.map(function(h){ return h.v; });
+                    var color = m.type === 'counter' ? brandColor : brand2Color;
+                    
+                    chartDom.echartsInstance.setOption({
+                        animation: false,
+                        grid: { top: 2, bottom: 2, left: 0, right: 0 },
+                        xAxis: { type: 'category', show: false, boundaryGap: false },
+                        yAxis: { type: 'value', show: false, min: function(v){ return Math.floor(v.min * 0.95); } },
+                        series: [{
+                            type: 'line', data: dataVals, smooth: true, symbol: 'none',
+                            lineStyle: { width: 2, color: color },
+                            areaStyle: { 
+                                color: new echarts.graphic.LinearGradient(0,0,0,1, [
+                                    {offset:0, color: color}, 
+                                    {offset:1, color: 'transparent'} // Fade out
+                                ]) 
+                            }
+                        }]
+                    });
+                    chartDom.echartsInstance.resize();
+                }
+             });
+          }
+        }
+
       }).catch(console.error);
     }
 
@@ -407,5 +479,12 @@ export function makeDashboardRouter(store: Store): Router {
     res.setHeader('Cache-Control', 'no-store');
     res.json(summarize(store));
   });
+
+  router.get('/metrics', (_req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'text/plain; version=0.0.4');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(getPrometheusMetrics(store));
+  });
+
   return router;
 }

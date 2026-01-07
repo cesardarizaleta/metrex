@@ -9,9 +9,49 @@ export function createStore(options: MetrexOptions): Store {
     inFlight: 0,
     statusCounts: {},
     routeStats: {},
+    customMetrics: {},
     events: [],
     maxEvents,
     systemMetrics: [],
+  };
+}
+
+export function setGauge(store: Store, name: string, value: number, help?: string) {
+  const existing = store.customMetrics[name];
+  const history = existing ? existing.history : [];
+  const now = nowMs();
+
+  history.push({ t: now, v: value });
+  if (history.length > 60) history.shift();
+
+  store.customMetrics[name] = {
+    name,
+    type: 'gauge',
+    value,
+    help: help || existing?.help,
+    updatedAt: now,
+    history,
+  };
+}
+
+export function incCounter(store: Store, name: string, inc = 1, help?: string) {
+  const existing = store.customMetrics[name];
+  const current = existing?.value || 0;
+  const newValue = current + inc;
+
+  const history = existing ? existing.history : [];
+  const now = nowMs();
+
+  history.push({ t: now, v: newValue });
+  if (history.length > 60) history.shift();
+
+  store.customMetrics[name] = {
+    name,
+    type: 'counter',
+    value: newValue,
+    help: help || existing?.help,
+    updatedAt: now,
+    history,
   };
 }
 
@@ -22,12 +62,14 @@ export function recordEvent(store: Store, ev: Event) {
   const key = ev.route;
   const rs = (store.routeStats[key] = store.routeStats[key] || {
     count: 0,
+    totalDuration: 0,
     statuses: {},
     durations: [],
     lastSeenAt: 0,
   });
 
   rs.count += 1;
+  rs.totalDuration += ev.dur;
   rs.statuses[ev.status] = (rs.statuses[ev.status] || 0) + 1;
   rs.durations.push(ev.dur);
   if (rs.durations.length > 5000) rs.durations = rs.durations.slice(-3000);
@@ -86,6 +128,7 @@ export function summarize(store: Store) {
     systemMetrics:
       store.systemMetrics.length > 0 ? store.systemMetrics[store.systemMetrics.length - 1] : null,
     systemTimeline: store.systemMetrics.slice(-60), // Last minute
+    customMetrics: store.customMetrics,
   };
 }
 

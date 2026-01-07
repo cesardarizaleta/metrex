@@ -4,11 +4,18 @@ const { useMetrex } = require('..');
 const app = express();
 
 // Attach Metrex globally and mount dashboard at /metrex
-useMetrex(app, { routePath: '/metrex' });
+const metrex = useMetrex(app, { routePath: '/metrex' });
 
 // Demo routes
 app.get('/hello', (req, res) => {
   res.json({ ok: true, msg: 'Hello world' });
+});
+
+app.get('/buy', (req, res) => {
+  // Simulate logic
+  metrex.counter('items_sold', 1, 'Total items sold');
+  metrex.gauge('queue_depth', Math.floor(Math.random() * 20), 'Current processing queue');
+  res.json({ ok: true, bought: true });
 });
 
 app.get('/slow', async (req, res) => {

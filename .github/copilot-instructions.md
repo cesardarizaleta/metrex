@@ -41,9 +41,10 @@ Metrex is an Express.js middleware for API metrics and dashboard. It instruments
 - Follow existing patterns in the codebase.
 - Avoid deprecated APIs.
 - For Express middleware, suggest proper req/res handling.
+- **Metrics Consistency**: When adding or modifying metrics, ALWAYS update both the HTML dashboard (`src/dashboard.ts`) and the Prometheus exporter (`src/prometheus.ts`).
 
 ## Examples
-- **Adding a metric**: Implement in instrumentation.ts, add test in tests/.
+- **Adding a metric**: Implement in `instrumentation.ts`, update `store.ts`, and expose in both `dashboard.ts` and `prometheus.ts`.
 - **New endpoint**: Update dashboard.ts, ensure JSON response.
 - **Config option**: Add to types.ts, validate in useMetrex.
 
