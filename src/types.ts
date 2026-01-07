@@ -6,6 +6,10 @@ export type MetrexOptions = {
   shouldTrack?: (req: Request) => boolean;
   excludePaths?: Array<string | RegExp>;
   slowThreshold?: number;
+  auth?: {
+    username?: string;
+    password?: string;
+  };
 };
 
 export type Event = { ts: number; route: string; method: string; status: number; dur: number };
@@ -46,6 +50,9 @@ export type Store = {
   events: Event[];
   maxEvents: number;
   systemMetrics: SystemMetrics[];
+  // Internal state for diff calculation
+  lastCpuUsage?: NodeJS.CpuUsage;
+  lastSystemTime?: number;
 };
 
 export type { Express };

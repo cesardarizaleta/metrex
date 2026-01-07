@@ -4,7 +4,13 @@ const { useMetrex } = require('..');
 const app = express();
 
 // Attach Metrex globally and mount dashboard at /metrex
-const metrex = useMetrex(app, { routePath: '/metrex' });
+const metrex = useMetrex(app, {
+  routePath: '/metrex',
+  auth: {
+    username: 'admin',
+    password: '123'
+  }
+});
 
 // Demo routes
 app.get('/hello', (req, res) => {

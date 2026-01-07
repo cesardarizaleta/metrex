@@ -133,14 +133,33 @@ export function summarize(store: Store) {
 }
 
 export function collectSystemMetrics(store: Store) {
+  const now = nowMs();
+  const currentCpu = process.cpuUsage();
+  let cpuPercent = 0;
+
+  if (store.lastCpuUsage && store.lastSystemTime) {
+    const elapsed = now - store.lastSystemTime;
+    if (elapsed > 0) {
+      // Calculate diff in microseconds
+      const userDiff = currentCpu.user - store.lastCpuUsage.user;
+      const sysDiff = currentCpu.system - store.lastCpuUsage.system;
+      // Convert to fraction of time (microsecond / microsecond)
+      // elapsed is ms, so elapsed * 1000 = us
+      cpuPercent = (userDiff + sysDiff) / (elapsed * 1000);
+    }
+  }
+
+  // Update state
+  store.lastCpuUsage = currentCpu;
+  store.lastSystemTime = now;
+
   const memUsage = process.memoryUsage();
-  const cpuUsage = process.cpuUsage();
 
   const metrics: SystemMetrics = {
-    cpuUsage: (cpuUsage.user + cpuUsage.system) / 1000000, // Convert to seconds
+    cpuUsage: cpuPercent,
     memoryUsage: memUsage.heapUsed,
     memoryTotal: memUsage.heapTotal,
-    timestamp: nowMs(),
+    timestamp: now,
   };
 
   store.systemMetrics.push(metrics);

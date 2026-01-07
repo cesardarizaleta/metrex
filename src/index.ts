@@ -7,7 +7,7 @@ import type { MetrexOptions } from './types';
 export function useMetrex(app: Express, options: MetrexOptions = {}) {
   const store = createStore(options);
   const instrumentation = makeInstrumentation(store, options);
-  const dashboard = makeDashboardRouter(store);
+  const dashboard = makeDashboardRouter(store, options);
   const routePath = options.routePath || '/metrex';
 
   app.use(instrumentation);
@@ -24,7 +24,7 @@ export function useMetrex(app: Express, options: MetrexOptions = {}) {
 
 export function metrexRouter(options: MetrexOptions = {}) {
   const store = createStore(options);
-  const router = makeDashboardRouter(store);
+  const router = makeDashboardRouter(store, options);
 
   // Collect system metrics every second
   setInterval(() => collectSystemMetrics(store), 1000);

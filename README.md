@@ -69,6 +69,21 @@ These metrics will appear automatically in the Dashboard and the Prometheus expo
 - `shouldTrack(req)` (function): filter function; return `false` to not count a request.
 - `excludePaths` (string[] | RegExp[]): paths to exclude from instrumentation.
 - `slowThreshold` (number): threshold in ms to mark slow requests (reserved for future enhancements).
+- `auth` (object): Basic auth credentials for the dashboard.
+  - `username` (string)
+  - `password` (string)
+
+### Example with Auth
+
+```js
+useMetrex(app, {
+  routePath: '/metrex',
+  auth: {
+    username: 'admin',
+    password: 'supersecretpassword',
+  },
+});
+```
 
 ## Recommendations
 

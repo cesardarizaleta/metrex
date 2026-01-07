@@ -1,7 +1,7 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Request, Response, Router, NextFunction } from 'express';
 import { summarize } from './store';
 import { getPrometheusMetrics } from './prometheus';
-import type { Store } from './types';
+import type { Store, MetrexOptions } from './types';
 
 export function renderHtml() {
   return `<!doctype html>
@@ -468,8 +468,29 @@ export function renderHtml() {
 </html>`;
 }
 
-export function makeDashboardRouter(store: Store): Router {
+export function makeDashboardRouter(store: Store, options: MetrexOptions = {}): Router {
   const router = express.Router();
+
+  // Basic Auth Middleware
+  if (options.auth && options.auth.username && options.auth.password) {
+    router.use((req: Request, res: Response, next: NextFunction) => {
+      const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
+      const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
+
+      if (
+        login &&
+        password &&
+        login === options.auth?.username &&
+        password === options.auth?.password
+      ) {
+        return next();
+      }
+
+      res.set('WWW-Authenticate', 'Basic realm="Metrex Dashboard"');
+      res.status(401).send('Authentication required.');
+    });
+  }
+
   router.get('/', (_req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
