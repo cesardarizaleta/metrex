@@ -8,8 +8,8 @@ const metrex = useMetrex(app, {
   routePath: '/metrex',
   auth: {
     username: 'admin',
-    password: '123'
-  }
+    password: '123',
+  },
 });
 
 // Demo routes
