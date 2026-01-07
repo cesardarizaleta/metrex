@@ -10,6 +10,15 @@ export type MetrexOptions = {
     username?: string;
     password?: string;
   };
+  onAlert?: (event: AlertEvent) => void;
+  cpuThreshold?: number; // Percentage (0-100)
+};
+
+export type AlertEvent = {
+  type: 'cpu' | 'latency' | 'error';
+  value: number;
+  msg: string;
+  timestamp: number;
 };
 
 export type Event = { ts: number; route: string; method: string; status: number; dur: number };
@@ -53,6 +62,11 @@ export type Store = {
   // Internal state for diff calculation
   lastCpuUsage?: NodeJS.CpuUsage;
   lastSystemTime?: number;
+  // Alerting
+  onAlert?: (event: AlertEvent) => void;
+  cpuThreshold: number;
+  slowThreshold: number;
+  lastCpuAlert: number;
 };
 
 export type { Express };

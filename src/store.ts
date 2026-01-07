@@ -13,6 +13,10 @@ export function createStore(options: MetrexOptions): Store {
     events: [],
     maxEvents,
     systemMetrics: [],
+    onAlert: options.onAlert,
+    cpuThreshold: options.cpuThreshold ?? 90, // Default 90%
+    slowThreshold: options.slowThreshold ?? 1000, // Default 1s
+    lastCpuAlert: 0,
   };
 }
 
@@ -78,6 +82,26 @@ export function recordEvent(store: Store, ev: Event) {
   store.events.push(ev);
   if (store.events.length > store.maxEvents) {
     store.events = store.events.slice(-Math.floor(store.maxEvents * 0.75));
+  }
+
+  // Alerts: Error (5xx)
+  if (ev.status >= 500 && store.onAlert) {
+    store.onAlert({
+      type: 'error',
+      value: ev.status,
+      msg: `HTTP ${ev.status} on ${ev.method} ${ev.route}`,
+      timestamp: ev.ts,
+    });
+  }
+
+  // Alerts: Latency
+  if (ev.dur > store.slowThreshold && store.onAlert) {
+    store.onAlert({
+      type: 'latency',
+      value: ev.dur,
+      msg: `Slow Request (${ev.dur.toFixed(0)}ms) on ${ev.method} ${ev.route}`,
+      timestamp: ev.ts,
+    });
   }
 }
 
@@ -146,6 +170,19 @@ export function collectSystemMetrics(store: Store) {
       // Convert to fraction of time (microsecond / microsecond)
       // elapsed is ms, so elapsed * 1000 = us
       cpuPercent = (userDiff + sysDiff) / (elapsed * 1000);
+    }
+  }
+
+  // Alerts: CPU Usage (Debounced 1 min)
+  if (store.onAlert && cpuPercent * 100 > store.cpuThreshold) {
+    if (now - store.lastCpuAlert > 60_000) {
+      store.onAlert({
+        type: 'cpu',
+        value: cpuPercent * 100,
+        msg: `High CPU Usage: ${(cpuPercent * 100).toFixed(1)}%`,
+        timestamp: now,
+      });
+      store.lastCpuAlert = now;
     }
   }
 

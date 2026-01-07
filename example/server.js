@@ -4,8 +4,16 @@ const { useMetrex } = require('..');
 const app = express();
 
 // Attach Metrex globally and mount dashboard at /metrex
-const metrex = useMetrex(app, {
+const metrex = useMetrex(app, { 
   routePath: '/metrex',
+  // Simulate alert triggers
+  slowThreshold: 50, 
+  cpuThreshold: 10,
+  onAlert: (event) => {
+    console.log(`[ALERTA METREX] ${event.type.toUpperCase()}: ${event.msg}`);
+    // Aquí pondrías tu código de Telegram:
+    // sendToTelegram(event.msg);
+  },
   auth: {
     username: 'admin',
     password: '123',

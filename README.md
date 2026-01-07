@@ -68,7 +68,9 @@ These metrics will appear automatically in the Dashboard and the Prometheus expo
 - `historySize` (number): number of events to retain in memory (default 2000).
 - `shouldTrack(req)` (function): filter function; return `false` to not count a request.
 - `excludePaths` (string[] | RegExp[]): paths to exclude from instrumentation.
-- `slowThreshold` (number): threshold in ms to mark slow requests (reserved for future enhancements).
+- `slowThreshold` (number): threshold in ms to mark slow requests (default 1000ms).
+- `cpuThreshold` (number): percentage (0-100) to trigger CPU alerts (default 90).
+- `onAlert` (function): callback for alerts.
 - `auth` (object): Basic auth credentials for the dashboard.
   - `username` (string)
   - `password` (string)
@@ -85,16 +87,35 @@ useMetrex(app, {
 });
 ```
 
+### Notifications & Alerts
+
+Metrex can trigger a callback when it detects issues, allowing you to integrate with Telegram, Slack, etc.
+
+```js
+useMetrex(app, {
+  slowThreshold: 2000, // Alert if request takes > 2s
+  cpuThreshold: 80, // Alert if CPU > 80%
+  onAlert: (event) => {
+    // event = { type: 'error' | 'latency' | 'cpu', value: number, msg: string, timestamp: number }
+    console.warn('ALERT:', event.msg);
+
+    // Example: Send to Telegram
+    // fetch(`https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=<ID>&text=${encodeURIComponent(event.msg)}`);
+  },
+});
+```
+
+Triggers:
+
+- **Error**: HTTP 5xx responses.
+- **Latency**: Requests taking longer than `slowThreshold`.
+- **CPU**: Usage exceeds `cpuThreshold` (debounced to once per minute).
+
 ## Recommendations
 
 - Mount it before your business routes: `app.use(metrex())` at the beginning to capture all requests.
 - If you have sensitive paths, exclude them with `excludePaths`.
-- For multi-instance environments, consider adding an excluded `/health` endpoint to avoid skewing metrics.
-
-## Endpoints
-
-- `GET {routePath}`: HTML dashboard.
-- `GET {routePath}/data`: JSON with aggregated metrics.
+- FGET {routePath}/data`: JSON with aggregated metrics.
 
 ## Local Example
 
