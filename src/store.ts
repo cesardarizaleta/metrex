@@ -9,9 +9,53 @@ export function createStore(options: MetrexOptions): Store {
     inFlight: 0,
     statusCounts: {},
     routeStats: {},
+    customMetrics: {},
     events: [],
     maxEvents,
     systemMetrics: [],
+    onAlert: options.onAlert,
+    cpuThreshold: options.cpuThreshold ?? 90, // Default 90%
+    slowThreshold: options.slowThreshold ?? 1000, // Default 1s
+    lastCpuAlert: 0,
+  };
+}
+
+export function setGauge(store: Store, name: string, value: number, help?: string) {
+  const existing = store.customMetrics[name];
+  const history = existing ? existing.history : [];
+  const now = nowMs();
+
+  history.push({ t: now, v: value });
+  if (history.length > 60) history.shift();
+
+  store.customMetrics[name] = {
+    name,
+    type: 'gauge',
+    value,
+    help: help || existing?.help,
+    updatedAt: now,
+    history,
+  };
+}
+
+export function incCounter(store: Store, name: string, inc = 1, help?: string) {
+  const existing = store.customMetrics[name];
+  const current = existing?.value || 0;
+  const newValue = current + inc;
+
+  const history = existing ? existing.history : [];
+  const now = nowMs();
+
+  history.push({ t: now, v: newValue });
+  if (history.length > 60) history.shift();
+
+  store.customMetrics[name] = {
+    name,
+    type: 'counter',
+    value: newValue,
+    help: help || existing?.help,
+    updatedAt: now,
+    history,
   };
 }
 
@@ -22,12 +66,14 @@ export function recordEvent(store: Store, ev: Event) {
   const key = ev.route;
   const rs = (store.routeStats[key] = store.routeStats[key] || {
     count: 0,
+    totalDuration: 0,
     statuses: {},
     durations: [],
     lastSeenAt: 0,
   });
 
   rs.count += 1;
+  rs.totalDuration += ev.dur;
   rs.statuses[ev.status] = (rs.statuses[ev.status] || 0) + 1;
   rs.durations.push(ev.dur);
   if (rs.durations.length > 5000) rs.durations = rs.durations.slice(-3000);
@@ -36,6 +82,26 @@ export function recordEvent(store: Store, ev: Event) {
   store.events.push(ev);
   if (store.events.length > store.maxEvents) {
     store.events = store.events.slice(-Math.floor(store.maxEvents * 0.75));
+  }
+
+  // Alerts: Error (5xx)
+  if (ev.status >= 500 && store.onAlert) {
+    store.onAlert({
+      type: 'error',
+      value: ev.status,
+      msg: `HTTP ${ev.status} on ${ev.method} ${ev.route}`,
+      timestamp: ev.ts,
+    });
+  }
+
+  // Alerts: Latency
+  if (ev.dur > store.slowThreshold && store.onAlert) {
+    store.onAlert({
+      type: 'latency',
+      value: ev.dur,
+      msg: `Slow Request (${ev.dur.toFixed(0)}ms) on ${ev.method} ${ev.route}`,
+      timestamp: ev.ts,
+    });
   }
 }
 
@@ -86,18 +152,51 @@ export function summarize(store: Store) {
     systemMetrics:
       store.systemMetrics.length > 0 ? store.systemMetrics[store.systemMetrics.length - 1] : null,
     systemTimeline: store.systemMetrics.slice(-60), // Last minute
+    customMetrics: store.customMetrics,
   };
 }
 
 export function collectSystemMetrics(store: Store) {
+  const now = nowMs();
+  const currentCpu = process.cpuUsage();
+  let cpuPercent = 0;
+
+  if (store.lastCpuUsage && store.lastSystemTime) {
+    const elapsed = now - store.lastSystemTime;
+    if (elapsed > 0) {
+      // Calculate diff in microseconds
+      const userDiff = currentCpu.user - store.lastCpuUsage.user;
+      const sysDiff = currentCpu.system - store.lastCpuUsage.system;
+      // Convert to fraction of time (microsecond / microsecond)
+      // elapsed is ms, so elapsed * 1000 = us
+      cpuPercent = (userDiff + sysDiff) / (elapsed * 1000);
+    }
+  }
+
+  // Alerts: CPU Usage (Debounced 1 min)
+  if (store.onAlert && cpuPercent * 100 > store.cpuThreshold) {
+    if (now - store.lastCpuAlert > 60_000) {
+      store.onAlert({
+        type: 'cpu',
+        value: cpuPercent * 100,
+        msg: `High CPU Usage: ${(cpuPercent * 100).toFixed(1)}%`,
+        timestamp: now,
+      });
+      store.lastCpuAlert = now;
+    }
+  }
+
+  // Update state
+  store.lastCpuUsage = currentCpu;
+  store.lastSystemTime = now;
+
   const memUsage = process.memoryUsage();
-  const cpuUsage = process.cpuUsage();
 
   const metrics: SystemMetrics = {
-    cpuUsage: (cpuUsage.user + cpuUsage.system) / 1000000, // Convert to seconds
+    cpuUsage: cpuPercent,
     memoryUsage: memUsage.heapUsed,
     memoryTotal: memUsage.heapTotal,
-    timestamp: nowMs(),
+    timestamp: now,
   };
 
   store.systemMetrics.push(metrics);

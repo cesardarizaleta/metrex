@@ -4,11 +4,32 @@ const { useMetrex } = require('..');
 const app = express();
 
 // Attach Metrex globally and mount dashboard at /metrex
-useMetrex(app, { routePath: '/metrex' });
+const metrex = useMetrex(app, { 
+  routePath: '/metrex',
+  // Simulate alert triggers
+  slowThreshold: 50, 
+  cpuThreshold: 10,
+  onAlert: (event) => {
+    console.log(`[ALERTA METREX] ${event.type.toUpperCase()}: ${event.msg}`);
+    // Aquí pondrías tu código de Telegram:
+    // sendToTelegram(event.msg);
+  },
+  auth: {
+    username: 'admin',
+    password: '123',
+  },
+});
 
 // Demo routes
 app.get('/hello', (req, res) => {
   res.json({ ok: true, msg: 'Hello world' });
+});
+
+app.get('/buy', (req, res) => {
+  // Simulate logic
+  metrex.counter('items_sold', 1, 'Total items sold');
+  metrex.gauge('queue_depth', Math.floor(Math.random() * 20), 'Current processing queue');
+  res.json({ ok: true, bought: true });
 });
 
 app.get('/slow', async (req, res) => {
